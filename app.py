@@ -2,9 +2,10 @@ import gc
 
 import streamlit as st
 
+from src.chat_history import clear_chat_history, load_chat_history, save_chat_history
 from src.loader import load_document
 from src.logging_utils import get_logger
-from src.qa_chain import generate_answer
+from src import qa_chain
 from src.splitter import split_document
 from src.vectorstore import (
     build_vectorstore,
@@ -40,6 +41,8 @@ if "vectorstore" not in st.session_state:
     st.session_state["vectorstore"] = None
 if "current_kb_name" not in st.session_state:
     st.session_state["current_kb_name"] = None
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
 
 st.title("📚 SmartDocs-RAG")
 st.write("一个支持多文件知识库、持久化存储和检索阈值控制的本地问答原型")
@@ -53,10 +56,13 @@ with st.sidebar:
         selected_meta = get_vectorstore_metadata(selected_kb)
 
         if selected_meta:
-            st.caption(f"更新时间：{selected_meta['updated_at']}")
-            st.caption(f"当前版本：{selected_meta['collection_name']}")
-            st.caption(f"文档数：{selected_meta['document_count']}｜Chunks：{selected_meta['chunk_count']}")
-            st.caption("来源文件：" + "、".join(selected_meta["sources"]))
+            st.caption(f"更新时间：{selected_meta.get('updated_at', '未知')}")
+            if selected_meta.get("collection_name"):
+                st.caption(f"当前版本：{selected_meta['collection_name']}")
+            st.caption(f"文档数：{selected_meta.get('document_count', '?')}｜Chunks：{selected_meta.get('chunk_count', '?')}")
+            sources = selected_meta.get("sources", [])
+            if sources:
+                st.caption("来源文件：" + "、".join(sources))
 
         load_col, delete_col = st.columns(2)
         with load_col:
@@ -64,6 +70,7 @@ with st.sidebar:
                 try:
                     st.session_state["vectorstore"] = load_vectorstore(selected_kb)
                     st.session_state["current_kb_name"] = selected_kb
+                    st.session_state["chat_history"] = load_chat_history(selected_kb)
                     st.success(f"已加载知识库：{selected_kb}")
                 except Exception as exc:
                     st.error(f"加载失败：{exc}")
@@ -74,6 +81,7 @@ with st.sidebar:
                     if st.session_state["current_kb_name"] == selected_kb:
                         st.session_state["vectorstore"] = None
                         st.session_state["current_kb_name"] = None
+                        st.session_state["chat_history"] = []
                     st.success(f"已删除知识库：{selected_kb}")
                     st.rerun()
                 except Exception as exc:
@@ -181,6 +189,8 @@ if uploaded_files:
                     )
                     st.session_state["vectorstore"] = vectorstore
                     st.session_state["current_kb_name"] = normalized_kb_name
+                    st.session_state["chat_history"] = []
+                    clear_chat_history(normalized_kb_name)
                     logger.info("知识库构建成功: %s", normalized_kb_name)
                     st.success(f"知识库构建成功：{normalized_kb_name}")
                     st.info("你现在可以开始提问，或在下次启动时从侧边栏重新加载。")
@@ -208,7 +218,30 @@ if st.session_state["vectorstore"] is not None:
         default=[],
         help="留空表示在当前知识库的全部文件中检索。",
     )
-    query = st.text_input("请输入你的问题")
+    history_col, clear_col = st.columns([4, 1])
+    with history_col:
+        st.caption(f"当前会话轮数：{len(st.session_state['chat_history'])}")
+    with clear_col:
+        if st.button("清空会话"):
+            st.session_state["chat_history"] = []
+            if st.session_state["current_kb_name"]:
+                clear_chat_history(st.session_state["current_kb_name"])
+            st.rerun()
+
+    if st.session_state["chat_history"]:
+        st.markdown("## 会话历史")
+        for turn_index, turn in enumerate(st.session_state["chat_history"], start=1):
+            with st.container(border=True):
+                st.markdown(f"**第 {turn_index} 轮**")
+                st.markdown(f"**你：** {turn['question']}")
+                st.markdown(f"**助手：** {turn['answer']}")
+                if turn.get("citations"):
+                    source_summary = "、".join(
+                        sorted({citation["source"] for citation in turn["citations"]})
+                    )
+                    st.caption(f"引用来源：{source_summary}")
+
+    query = st.chat_input("请输入你的问题")
 
     if query:
         logger.info("用户提问: %r, top_k=%d, threshold=%.2f", query[:50], top_k, score_threshold)
@@ -226,18 +259,37 @@ if st.session_state["vectorstore"] is not None:
                 st.warning("没有检索到达到阈值的相关内容，当前不建议生成回答。请尝试降低阈值或调整提问方式。")
             else:
                 docs = [item["doc"] for item in search_results]
+                st.markdown("## 当前问题")
+                st.markdown(query)
 
+                st.markdown("## 回答结果")
                 with st.spinner("正在生成回答..."):
-                    answer_result = generate_answer(query, docs)
-
+                    answer = st.write_stream(
+                        qa_chain.stream_answer(
+                            query,
+                            docs,
+                            history=st.session_state["chat_history"],
+                        )
+                    )
+                answer_result = qa_chain.build_stream_result(answer, docs)
                 answer = answer_result["answer"]
 
                 if not answer or not answer.strip():
                     st.warning("模型未返回有效回答，请稍后重试。")
                 else:
-                    st.markdown("## 回答结果")
-                    st.markdown(answer)
-
+                    st.session_state["chat_history"].append(
+                        {
+                            "question": query,
+                            "answer": answer,
+                            "citations": answer_result["citations"],
+                            "source_filter": source_filter,
+                        }
+                    )
+                    if st.session_state["current_kb_name"]:
+                        save_chat_history(
+                            st.session_state["current_kb_name"],
+                            st.session_state["chat_history"],
+                        )
                     if not answer_result["enough_context"]:
                         st.info("模型判断当前上下文信息不足，回答仅基于已有片段做保守输出。")
 

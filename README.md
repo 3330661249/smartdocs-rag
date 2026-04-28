@@ -33,7 +33,7 @@ SmartDocs-RAG 是一个本地知识库问答系统，面向文档问答场景，
 - Chroma
 - pypdf
 - 智谱 GLM 系列 Chat Model + Embedding-3
-- python-dotenv / structlog
+- python-dotenv / logging
 
 ---
 

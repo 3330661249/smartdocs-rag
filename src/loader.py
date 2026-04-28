@@ -45,6 +45,9 @@ def load_document(uploaded_file) -> dict:
     suffix = Path(file_name).suffix.lower()
     logger.info("Load document request: %s (%s)", file_name, suffix or "unknown")
 
+    if not file_name.strip():
+        raise ValueError("文件名不能为空。")
+
     uploaded_file.seek(0, 2)
     file_size = uploaded_file.tell()
     uploaded_file.seek(0)

@@ -1,4 +1,5 @@
 import json
+import re
 
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -7,7 +8,11 @@ from src.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
-_SYSTEM_PROMPT = """你是一个基于文档内容进行问答的助手。
+QA_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """你是一个基于文档内容进行问答的助手。
 
 请严格遵守以下规则：
 1. 只能依据给定的上下文回答问题。
@@ -16,16 +21,41 @@ _SYSTEM_PROMPT = """你是一个基于文档内容进行问答的助手。
 4. 回答应简洁、清晰、使用中文。
 5. 回答中如果引用了上下文，请在句子末尾标注对应编号，例如 [1]、[2]。
 6. 仅输出 JSON，格式如下：
-{{
+{
   "answer": "你的回答",
   "enough_context": true,
   "used_citations": [1, 2]
-}}"""
+}""",
+        ),
+        (
+            "human",
+            "【历史对话】\n{history}\n\n【上下文】\n{context}\n\n【用户问题】\n{query}\n\n请开始回答：",
+        ),
+    ]
+)
 
-QA_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", _SYSTEM_PROMPT),
-    ("human", "【上下文】\n{context}\n\n【用户问题】\n{query}\n\n请开始回答："),
-])
+STREAM_QA_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """你是一个基于文档内容进行问答的助手。
+
+请严格遵守以下规则：
+1. 只能依据给定的上下文回答问题。
+2. 不要使用上下文之外的常识或外部知识进行补充。
+3. 如果上下文中没有足够信息回答问题，请以“根据当前上下文信息不足”开头说明无法确认。
+4. 回答应简洁、清晰、使用中文。
+5. 只要使用了某条上下文，请在对应句子末尾标注编号，例如 [1]、[2]。
+6. 正常输出回答正文，不要输出 JSON，不要解释你的规则。""",
+        ),
+        (
+            "human",
+            "【历史对话】\n{history}\n\n【上下文】\n{context}\n\n【用户问题】\n{query}\n\n请开始回答：",
+        ),
+    ]
+)
+
+INSUFFICIENT_CONTEXT_PREFIX = "根据当前上下文信息不足"
 
 
 def _build_citations(docs: list) -> list[dict]:
@@ -60,32 +90,111 @@ def _parse_json_response(content: str) -> dict:
     return json.loads(normalized)
 
 
-def generate_answer(query: str, docs: list) -> dict:
-    if not query or not query.strip():
-        raise ValueError("查询内容不能为空。")
-    if len(query) > MAX_QUERY_LENGTH:
-        raise ValueError(f"查询长度 {len(query)} 超过最大限制 {MAX_QUERY_LENGTH}。")
-
-    llm = get_chat_llm()
-
+def _build_context(citations: list[dict], docs: list) -> str:
     context_lines = []
-    citations = _build_citations(docs)
     for citation, doc in zip(citations, docs):
         label = f"[{citation['index']}] 来源：{citation['source']}"
         if citation["page"] is not None:
             label += f" 第 {citation['page']} 页"
         label += f" | Chunk ID：{citation['chunk_id']}"
         context_lines.append(f"{label}\n{doc.page_content}")
+    return "\n".join(context_lines)
 
-    chain = QA_PROMPT | llm
-    response = chain.invoke({"context": "\n".join(context_lines), "query": query})
+
+def _validate_query(query: str) -> str:
+    if not query or not query.strip():
+        raise ValueError("用户问题不能为空。")
+
+    normalized_query = query.strip()
+    if len(normalized_query) > MAX_QUERY_LENGTH:
+        raise ValueError(f"用户问题超过最大限制：{MAX_QUERY_LENGTH} 字符。")
+
+    return normalized_query
+
+
+def _collect_used_citations(answer: str, citations: list[dict]) -> list[dict]:
+    matches = {int(match) for match in re.findall(r"\[(\d+)\]", answer)}
+    return [
+        citation
+        for citation in citations
+        if not matches or citation["index"] in matches
+    ]
+
+
+def _build_history(history: list[dict] | None, limit: int = 3) -> str:
+    if not history:
+        return "无历史对话"
+
+    recent_turns = history[-limit:]
+    lines = []
+    for index, turn in enumerate(recent_turns, start=1):
+        question = str(turn.get("question", "")).strip() or "未记录问题"
+        answer = str(turn.get("answer", "")).strip() or "未记录回答"
+        lines.append(f"第 {index} 轮用户问题：{question}")
+        lines.append(f"第 {index} 轮助手回答：{answer}")
+    return "\n".join(lines)
+
+
+def build_stream_result(answer: str, docs: list) -> dict:
+    citations = _build_citations(docs)
+    filtered_citations = _collect_used_citations(answer, citations)
+    normalized_answer = answer.strip()
+    return {
+        "answer": normalized_answer,
+        "enough_context": not normalized_answer.startswith(INSUFFICIENT_CONTEXT_PREFIX),
+        "citations": filtered_citations,
+    }
+
+
+def stream_answer(query: str, docs: list, history: list[dict] | None = None):
+    normalized_query = _validate_query(query)
+    citations = _build_citations(docs)
+    context = _build_context(citations, docs)
+    history_text = _build_history(history)
+    logger.info(
+        "Stream answer: query_len=%s, docs=%s, citations=%s",
+        len(normalized_query),
+        len(docs),
+        len(citations),
+    )
+
+    chain = STREAM_QA_PROMPT | get_chat_llm()
+    for chunk in chain.stream(
+        {"history": history_text, "context": context, "query": normalized_query}
+    ):
+        content = getattr(chunk, "content", "")
+        if not content:
+            continue
+        if isinstance(content, list):
+            for item in content:
+                text = item.get("text", "") if isinstance(item, dict) else str(item)
+                if text:
+                    yield text
+        else:
+            yield str(content)
+
+
+def generate_answer(query: str, docs: list, history: list[dict] | None = None) -> dict:
+    query = _validate_query(query)
+
+    citations = _build_citations(docs)
+    context = _build_context(citations, docs)
+    history_text = _build_history(history)
+    logger.info(
+        "Generate answer: query_len=%s, docs=%s, citations=%s",
+        len(query),
+        len(docs),
+        len(citations),
+    )
+
+    chain = QA_PROMPT | get_chat_llm()
+    response = chain.invoke({"history": history_text, "context": context, "query": query})
     content = response.content.strip()
-
-    logger.info("生成回答: query=%r, docs=%d, response_len=%d", query[:50], len(docs), len(content))
 
     try:
         result = _parse_json_response(content)
     except json.JSONDecodeError:
+        logger.warning("LLM returned non-JSON content, fallback to raw content")
         result = {
             "answer": content,
             "enough_context": True,
@@ -93,12 +202,16 @@ def generate_answer(query: str, docs: list) -> dict:
         }
 
     used_citation_ids = set(result.get("used_citations", []))
-    filtered_citations = [
-        citation
-        for citation in citations
-        if not used_citation_ids or citation["index"] in used_citation_ids
-    ]
+    filtered_citations = _collect_used_citations(
+        "".join(f"[{citation_id}]" for citation_id in used_citation_ids),
+        citations,
+    )
 
+    logger.info(
+        "Generate answer complete: enough_context=%s, used_citations=%s",
+        result.get("enough_context", True),
+        sorted(used_citation_ids) if used_citation_ids else "ALL",
+    )
     return {
         "answer": result.get("answer", "").strip(),
         "enough_context": bool(result.get("enough_context", True)),
