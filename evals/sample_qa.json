@@ -1,0 +1,17 @@
+[
+  {
+    "question": "RAG 的全称是什么？",
+    "expected_keywords": ["Retrieval-Augmented Generation", "检索增强生成"],
+    "expected_source": "test_node.txt"
+  },
+  {
+    "question": "Agent 可以做什么？",
+    "expected_keywords": ["调用工具", "执行任务"],
+    "expected_source": "test_node.md"
+  },
+  {
+    "question": "RAG 的核心流程是什么？",
+    "expected_keywords": ["文档处理", "向量检索", "智能生成"],
+    "expected_source": "test_node.txt"
+  }
+]
