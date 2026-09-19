@@ -24,7 +24,6 @@ jobs:
         run: |
           pip install ruff
           ruff check src/ app.py evals/ tests/
-        continue-on-error: true
 
       - name: Run unit tests
         env:

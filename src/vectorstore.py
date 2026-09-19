@@ -145,6 +145,10 @@ def delete_vectorstore(kb_name: str):
 def search_similar_chunks(vectorstore, query, k=3, score_threshold=0.3, allowed_sources: list[str] | None = None):
     results = []
     fetch_k = max(k * 5, k)
+    search_options = {}
+    if allowed_sources:
+        sources = list(dict.fromkeys(allowed_sources))
+        search_options["filter"] = {"source": sources[0] if len(sources) == 1 else {"$in": sources}}
 
     def source_allowed(doc) -> bool:
         if not allowed_sources:
@@ -152,14 +156,14 @@ def search_similar_chunks(vectorstore, query, k=3, score_threshold=0.3, allowed_
         return doc.metadata.get("source") in allowed_sources
 
     if hasattr(vectorstore, "similarity_search_with_relevance_scores"):
-        pairs = vectorstore.similarity_search_with_relevance_scores(query, k=fetch_k)
+        pairs = vectorstore.similarity_search_with_relevance_scores(query, k=fetch_k, **search_options)
         for doc, score in pairs:
             if score >= score_threshold and source_allowed(doc):
                 results.append({"doc": doc, "score": score})
                 if len(results) >= k:
                     break
     else:
-        docs = vectorstore.similarity_search(query, k=fetch_k)
+        docs = vectorstore.similarity_search(query, k=fetch_k, **search_options)
         for doc in docs:
             if source_allowed(doc):
                 results.append({"doc": doc, "score": None})

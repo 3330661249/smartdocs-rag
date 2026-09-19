@@ -18,6 +18,7 @@ vectorstores/
 *.swo
 
 # Python
+.venv/
 *.egg-info/
 dist/
 build/

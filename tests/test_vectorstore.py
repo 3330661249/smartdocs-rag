@@ -1,5 +1,4 @@
-import pytest
-from src.vectorstore import normalize_kb_name, normalize_collection_name, vectorstore_exists, list_vectorstores
+from src.vectorstore import list_vectorstores, normalize_collection_name, normalize_kb_name, vectorstore_exists
 
 
 def test_normalize_kb_name_chinese():

@@ -1,4 +1,3 @@
-import json
 
 from src.chat_history import clear_chat_history, load_chat_history, save_chat_history
 

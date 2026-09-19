@@ -1,5 +1,6 @@
 import pytest
-from src.config import get_settings, Settings
+
+from src.config import Settings, get_settings
 
 
 def test_get_settings_returns_settings():
