@@ -20,12 +20,13 @@ QA_PROMPT = ChatPromptTemplate.from_messages(
 3. 如果上下文中没有足够信息回答问题，请明确说明信息不足。
 4. 回答应简洁、清晰、使用中文。
 5. 回答中如果引用了上下文，请在句子末尾标注对应编号，例如 [1]、[2]。
+used_citations 必须与回答正文中的编号一致；信息不足时为空数组。
 6. 仅输出 JSON，格式如下：
-{
+{{
   "answer": "你的回答",
   "enough_context": true,
   "used_citations": [1, 2]
-}""",
+}}""",
         ),
         (
             "human",
@@ -117,7 +118,7 @@ def _collect_used_citations(answer: str, citations: list[dict]) -> list[dict]:
     return [
         citation
         for citation in citations
-        if not matches or citation["index"] in matches
+        if citation["index"] in matches
     ]
 
 
@@ -135,19 +136,51 @@ def _build_history(history: list[dict] | None, limit: int = 3) -> str:
     return "\n".join(lines)
 
 
-def build_stream_result(answer: str, docs: list) -> dict:
-    citations = _build_citations(docs)
-    filtered_citations = _collect_used_citations(answer, citations)
-    normalized_answer = answer.strip()
-    return {
-        "answer": normalized_answer,
-        "enough_context": not normalized_answer.startswith(INSUFFICIENT_CONTEXT_PREFIX),
-        "citations": filtered_citations,
+def _failure_result(status: str) -> dict:
+    messages = {
+        "insufficient_context": "根据当前上下文信息不足，暂时无法确认。",
+        "invalid_response": "模型输出格式无效，本次未生成可验证的回答，请重试。",
+        "invalid_citations": "模型回答缺少有效引用或引用不一致，本次回答未通过校验，请重试。",
     }
+    return {
+        "answer": messages[status],
+        "enough_context": False,
+        "citations": [],
+        "status": status,
+    }
+
+
+def _finalize_answer(answer: str, docs: list, enough_context: bool = True, used_citations: list[int] | None = None) -> dict:
+    if not answer.strip():
+        return _failure_result("invalid_response")
+    if not docs or not enough_context or answer.strip().startswith(INSUFFICIENT_CONTEXT_PREFIX):
+        return _failure_result("insufficient_context")
+
+    citations = _build_citations(docs)
+    inline_ids = {int(match) for match in re.findall(r"\[(\d+)\]", answer)}
+    valid_ids = {citation["index"] for citation in citations}
+    if not inline_ids or not inline_ids <= valid_ids:
+        return _failure_result("invalid_citations")
+    if used_citations is not None and set(used_citations) != inline_ids:
+        return _failure_result("invalid_citations")
+    return {
+        "answer": answer.strip(),
+        "enough_context": True,
+        "citations": _collect_used_citations(answer, citations),
+        "status": "answered",
+    }
+
+
+def build_stream_result(answer: str, docs: list) -> dict:
+    """Validate citation identity after streaming; this does not grade semantic support."""
+    return _finalize_answer(answer, docs)
 
 
 def stream_answer(query: str, docs: list, history: list[dict] | None = None):
     normalized_query = _validate_query(query)
+    if not docs:
+        yield _failure_result("insufficient_context")["answer"]
+        return
     citations = _build_citations(docs)
     context = _build_context(citations, docs)
     history_text = _build_history(history)
@@ -176,6 +209,8 @@ def stream_answer(query: str, docs: list, history: list[dict] | None = None):
 
 def generate_answer(query: str, docs: list, history: list[dict] | None = None) -> dict:
     query = _validate_query(query)
+    if not docs:
+        return _failure_result("insufficient_context")
 
     citations = _build_citations(docs)
     context = _build_context(citations, docs)
@@ -189,31 +224,24 @@ def generate_answer(query: str, docs: list, history: list[dict] | None = None) -
 
     chain = QA_PROMPT | get_chat_llm()
     response = chain.invoke({"history": history_text, "context": context, "query": query})
-    content = response.content.strip()
+    content = response.content
+    if not isinstance(content, str):
+        return _failure_result("invalid_response")
 
     try:
         result = _parse_json_response(content)
     except json.JSONDecodeError:
-        logger.warning("LLM returned non-JSON content, fallback to raw content")
-        result = {
-            "answer": content,
-            "enough_context": True,
-            "used_citations": [citation["index"] for citation in citations],
-        }
+        logger.warning("LLM returned invalid JSON")
+        return _failure_result("invalid_response")
 
-    used_citation_ids = set(result.get("used_citations", []))
-    filtered_citations = _collect_used_citations(
-        "".join(f"[{citation_id}]" for citation_id in used_citation_ids),
-        citations,
-    )
-
-    logger.info(
-        "Generate answer complete: enough_context=%s, used_citations=%s",
-        result.get("enough_context", True),
-        sorted(used_citation_ids) if used_citation_ids else "ALL",
-    )
-    return {
-        "answer": result.get("answer", "").strip(),
-        "enough_context": bool(result.get("enough_context", True)),
-        "citations": filtered_citations,
-    }
+    if (
+        not isinstance(result, dict)
+        or not isinstance(result.get("answer"), str)
+        or type(result.get("enough_context")) is not bool
+        or not isinstance(result.get("used_citations"), list)
+        or any(type(value) is not int for value in result["used_citations"])
+    ):
+        return _failure_result("invalid_response")
+    finalized = _finalize_answer(result["answer"], docs, result["enough_context"], result["used_citations"])
+    logger.info("Generate answer complete: status=%s, citations=%s", finalized["status"], len(finalized["citations"]))
+    return finalized

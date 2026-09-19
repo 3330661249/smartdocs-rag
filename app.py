@@ -2,10 +2,10 @@ import gc
 
 import streamlit as st
 
+from src import qa_chain
 from src.chat_history import clear_chat_history, load_chat_history, save_chat_history
 from src.loader import load_document
 from src.logging_utils import get_logger
-from src import qa_chain
 from src.splitter import split_document
 from src.vectorstore import (
     build_vectorstore,
@@ -245,6 +245,7 @@ if st.session_state["vectorstore"] is not None:
 
     if query:
         logger.info("用户提问: %r, top_k=%d, threshold=%.2f", query[:50], top_k, score_threshold)
+        answer_placeholder = None
         try:
             with st.spinner("正在检索相关片段..."):
                 search_results = search_similar_chunks(
@@ -263,19 +264,25 @@ if st.session_state["vectorstore"] is not None:
                 st.markdown(query)
 
                 st.markdown("## 回答结果")
+                st.caption("生成中的内容为草稿，结束后检查引用编号；编号有效不代表事实已经核实。")
+                answer_placeholder = st.empty()
                 with st.spinner("正在生成回答..."):
-                    answer = st.write_stream(
-                        qa_chain.stream_answer(
-                            query,
-                            docs,
-                            history=st.session_state["chat_history"],
+                    with answer_placeholder.container():
+                        answer = st.write_stream(
+                            qa_chain.stream_answer(
+                                query,
+                                docs,
+                                history=st.session_state["chat_history"],
+                            )
                         )
-                    )
                 answer_result = qa_chain.build_stream_result(answer, docs)
                 answer = answer_result["answer"]
+                answer_placeholder.markdown(answer)
 
                 if not answer or not answer.strip():
                     st.warning("模型未返回有效回答，请稍后重试。")
+                elif answer_result["status"] != "answered":
+                    st.warning("本次未产生可引用的回答，未加入会话历史。")
                 else:
                     st.session_state["chat_history"].append(
                         {
@@ -338,6 +345,8 @@ if st.session_state["vectorstore"] is not None:
                         )
                         item_index += 1
 
-        except Exception as exc:
-            logger.error("问答失败: %s", exc, exc_info=True)
-            st.error(f"问答失败，请检查模型配置、网络连接或向量库状态。错误信息：{exc}")
+        except Exception:
+            if answer_placeholder is not None:
+                answer_placeholder.markdown("生成过程未完成，本次未保留回答草稿。")
+            logger.error("问答失败: code=QA_FAILED")
+            st.error("问答失败（QA_FAILED），请检查模型配置、网络连接或向量库状态后重试。")

@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from langchain_core.documents import Document
 
 from src.qa_chain import (
@@ -73,7 +73,7 @@ def test_generate_answer_too_long():
 
 def test_generate_answer_with_mock_llm(monkeypatch):
     mock_response = MagicMock()
-    mock_response.content = '{"answer": "RAG 是检索增强生成", "enough_context": true, "used_citations": [1]}'
+    mock_response.content = '{"answer": "RAG 是检索增强生成 [1]", "enough_context": true, "used_citations": [1]}'
 
     mock_chain = MagicMock()
     mock_chain.invoke.return_value = mock_response

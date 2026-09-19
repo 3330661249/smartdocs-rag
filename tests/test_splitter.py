@@ -1,4 +1,4 @@
-from src.splitter import split_document, _page_for_offset
+from src.splitter import _page_for_offset, split_document
 
 
 def test_split_basic_text():

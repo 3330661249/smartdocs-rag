@@ -2,12 +2,13 @@ import json
 import sys
 from io import BytesIO
 from pathlib import Path
+from uuid import uuid4
 
 from src.loader import load_document
 from src.logging_utils import get_logger
 from src.qa_chain import generate_answer
 from src.splitter import split_document
-from src.vectorstore import build_vectorstore, delete_vectorstore, search_similar_chunks
+from src.vectorstore import build_vectorstore, delete_vectorstore, search_similar_chunks, vectorstore_exists
 
 logger = get_logger(__name__)
 
@@ -22,18 +23,31 @@ def _uploaded_file_from_path(path: Path):
     return uploaded
 
 
-def build_demo_vectorstore():
+def build_demo_vectorstore(kb_name: str):
     documents = []
     for path in sorted(DATA_DIR.glob("*")):
         if path.suffix.lower() not in {".txt", ".md", ".pdf"}:
             continue
         document = load_document(_uploaded_file_from_path(path))
         documents.extend(split_document(document, chunk_size=500, overlap=80))
-    return build_vectorstore(documents, kb_name="eval_demo_kb")
+    return build_vectorstore(documents, kb_name=kb_name)
 
 
 def main():
-    vectorstore = build_demo_vectorstore()
+    kb_name = f"eval_{uuid4().hex}"
+    try:
+        vectorstore = build_demo_vectorstore(kb_name)
+        return evaluate(vectorstore)
+    finally:
+        if vectorstore_exists(kb_name):
+            try:
+                delete_vectorstore(kb_name)
+                logger.info("已清理本次评估向量库: %s", kb_name)
+            except Exception:
+                logger.exception("本次评估向量库清理失败: %s", kb_name)
+
+
+def evaluate(vectorstore):
     samples = json.loads(EVAL_FILE.read_text(encoding="utf-8"))
 
     results = []
@@ -68,12 +82,6 @@ def main():
     logger.info("同时命中关键词和引用来源的样例数：%d / %d", success_count, len(results))
     for item in results:
         logger.info("问题：%s | 关键词命中：%s | 来源命中：%s", item["question"], item["keyword_hit"], item["source_hit"])
-
-    try:
-        delete_vectorstore("eval_demo_kb")
-        logger.info("已清理评估向量库")
-    except Exception:
-        pass
 
     if success_count < len(results):
         logger.warning("评估未全部通过: %d/%d 成功", success_count, len(results))
