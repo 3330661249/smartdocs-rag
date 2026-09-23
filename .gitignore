@@ -4,6 +4,7 @@ __pycache__/
 
 # Vector store data (large, generated)
 vectorstores/
+/evals/runs/
 
 # Database files
 *.sqlite3

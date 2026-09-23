@@ -1,0 +1,442 @@
+[
+  {
+    "id": "D01",
+    "category": "direct",
+    "question": "按 2026 年差旅规则，高铁可以报销什么席别？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "高铁按二等座标准报销"
+      }
+    ],
+    "reference_answer": "按 2026 版规则，高铁按二等座标准报销。"
+  },
+  {
+    "id": "D02",
+    "category": "direct",
+    "question": "2026 年出差乘飞机，什么舱位可以报销，订票前需要谁批准？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "仅可报销经济舱，并须在订票前获得部门负责人批准"
+      }
+    ],
+    "reference_answer": "2026 年仅可报销飞机经济舱，并须在订票前获得部门负责人批准。"
+  },
+  {
+    "id": "D03",
+    "category": "direct",
+    "question": "2026 年在非一线城市住宿，每人每晚的通用上限是多少？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "其他城市每人每晚最高 320 元"
+      }
+    ],
+    "reference_answer": "2026 年其他城市住宿每人每晚最高 320 元。"
+  },
+  {
+    "id": "D04",
+    "category": "direct",
+    "question": "2026 年正式员工国内差旅的每日餐补是多少？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "每人每天 80 元计算"
+      }
+    ],
+    "reference_answer": "2026 年正式员工国内差旅餐补为每人每天 80 元。"
+  },
+  {
+    "id": "D05",
+    "category": "direct",
+    "question": "2026 年住宿没有票据时能否报销住宿费？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "没有票据的住宿费用不予报销"
+      }
+    ],
+    "reference_answer": "没有有效住宿票据时，住宿费用不予报销。"
+  },
+  {
+    "id": "D06",
+    "category": "direct",
+    "question": "2026 年员工能否先订好行程再申请差旅审批？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "未获批准的行程不得先行预订"
+      }
+    ],
+    "reference_answer": "不可以。出行前须获直属主管批准，未获批准不得先预订。"
+  },
+  {
+    "id": "D07",
+    "category": "direct",
+    "question": "2025 年 6 月的国内差旅应查哪个版本的差旅规则？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2024-archived.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2024-archived.md",
+        "quote": "2024 年 1 月 1 日至 2025 年 12 月 31 日"
+      }
+    ],
+    "reference_answer": "2025 年 6 月适用 2024 历史版差旅规则。"
+  },
+  {
+    "id": "D08",
+    "category": "direct",
+    "question": "客户身份证扫描件能直接上传到未经批准的外部模型服务吗？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "security-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "security-2026.md",
+        "quote": "不得上传到未经批准的外部模型服务"
+      }
+    ],
+    "reference_answer": "不可以。客户身份证扫描件不能上传至未经批准的外部模型服务。"
+  },
+  {
+    "id": "D09",
+    "category": "direct",
+    "question": "项目临时访问权限最长多久，到期后怎样继续使用？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "security-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "security-2026.md",
+        "quote": "最长 30 个自然日，到期自动失效；如需继续使用，必须重新申请"
+      }
+    ],
+    "reference_answer": "临时访问权限最长 30 个自然日，到期自动失效；继续使用要重新申请。"
+  },
+  {
+    "id": "D10",
+    "category": "direct",
+    "question": "2026 年采购预算正好 5000 元的设备，要附几家供应商报价？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "procurement-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "procurement-2026.md",
+        "quote": "预算达到或超过 5000 元时，申请单附至少两家供应商报价"
+      }
+    ],
+    "reference_answer": "预算正好 5000 元属于达到 5000 元，至少附两家供应商报价。"
+  },
+  {
+    "id": "C11",
+    "category": "cross_source",
+    "question": "2026 年 5 月上海住宿适用 450 元通用上限还是 500 元专项上限？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md",
+      "shanghai-addendum-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "一线城市每人每晚最高 450 元"
+      },
+      {
+        "source": "shanghai-addendum-2026.md",
+        "quote": "上海住宿：每人每晚最高 500 元"
+      }
+    ],
+    "reference_answer": "2026 年 5 月上海住宿适用专项上限，每人每晚最高 500 元。"
+  },
+  {
+    "id": "C12",
+    "category": "cross_source",
+    "question": "2026 年 5 月上海住宿专项上限比一线城市通用上限高多少元？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md",
+      "shanghai-addendum-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "一线城市每人每晚最高 450 元"
+      },
+      {
+        "source": "shanghai-addendum-2026.md",
+        "quote": "上海住宿：每人每晚最高 500 元"
+      }
+    ],
+    "reference_answer": "专项 500 元与通用 450 元相差 50 元。"
+  },
+  {
+    "id": "C13",
+    "category": "cross_source",
+    "question": "2024 版和 2026 版的每日餐补各是多少元？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2024-archived.md",
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2024-archived.md",
+        "quote": "每人每天 60 元计算"
+      },
+      {
+        "source": "travel-2026.md",
+        "quote": "每人每天 80 元计算"
+      }
+    ],
+    "reference_answer": "2024 版每天 60 元；2026 版每天 80 元。"
+  },
+  {
+    "id": "C14",
+    "category": "cross_source",
+    "question": "2025 年和 2026 年差旅返程后报销期限分别是几天？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2024-archived.md",
+      "travel-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2024-archived.md",
+        "quote": "返程后 10 个自然日内"
+      },
+      {
+        "source": "travel-2026.md",
+        "quote": "返程后 14 个自然日内"
+      }
+    ],
+    "reference_answer": "2025 年行程适用历史版，返程后 10 个自然日；2026 年行程适用新版，14 个自然日。"
+  },
+  {
+    "id": "C15",
+    "category": "cross_source",
+    "question": "员工 2026 年出差前要获得谁的批准；若要用外部模型处理内部资料又要获得谁的批准？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md",
+      "security-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "出行前须由直属主管批准差旅申请"
+      },
+      {
+        "source": "security-2026.md",
+        "quote": "须事先获得数据负责人书面批准"
+      }
+    ],
+    "reference_answer": "2026 年差旅申请在出行前由直属主管批准；外部模型处理内部资料须事先获得数据负责人书面批准。"
+  },
+  {
+    "id": "C16",
+    "category": "cross_source",
+    "question": "2026 年差旅返程报销和项目临时访问权限分别有哪些时间限制？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md",
+      "security-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "返程后 14 个自然日内提交报销申请"
+      },
+      {
+        "source": "security-2026.md",
+        "quote": "最长 30 个自然日，到期自动失效"
+      }
+    ],
+    "reference_answer": "2026 年差旅返程后 14 个自然日内提交报销申请；项目临时访问权限最长 30 个自然日。"
+  },
+  {
+    "id": "C17",
+    "category": "cross_source",
+    "question": "2026 年订机票与采购一台预算 5000 元的设备，各需要什么事前条件？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2026.md",
+      "procurement-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2026.md",
+        "quote": "在订票前获得部门负责人批准"
+      },
+      {
+        "source": "procurement-2026.md",
+        "quote": "取得部门负责人批准后再购买"
+      },
+      {
+        "source": "procurement-2026.md",
+        "quote": "预算达到或超过 5000 元时，申请单附至少两家供应商报价"
+      }
+    ],
+    "reference_answer": "机票在订票前获得部门负责人批准；5000 元设备在下单前提交申请并获部门负责人批准，同时附至少两家报价。"
+  },
+  {
+    "id": "C18",
+    "category": "cross_source",
+    "question": "2025 年 6 月上海一线城市住宿上限与 2026 年 5 月上海专项上限各是多少？",
+    "expected_behavior": "answer",
+    "expected_sources": [
+      "travel-2024-archived.md",
+      "shanghai-addendum-2026.md"
+    ],
+    "evidence": [
+      {
+        "source": "travel-2024-archived.md",
+        "quote": "一线城市每人每晚最高 380 元"
+      },
+      {
+        "source": "shanghai-addendum-2026.md",
+        "quote": "上海住宿：每人每晚最高 500 元"
+      }
+    ],
+    "reference_answer": "2025 年 6 月上海住宿适用历史版一线城市上限 380 元；2026 年 5 月适用上海专项上限 500 元。"
+  },
+  {
+    "id": "N19",
+    "category": "missing",
+    "question": "国内航班托运行李最多多少公斤？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "资料没有规定国内航班托运行李重量，无法确认具体公斤数。"
+  },
+  {
+    "id": "N20",
+    "category": "missing",
+    "question": "采购的手机保修期是几个月？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "资料没有规定手机保修期，无法确认具体月数。"
+  },
+  {
+    "id": "N21",
+    "category": "missing",
+    "question": "客户身份证扫描件要保存多少天？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "资料只规定访问审计日志保留 90 天，没有规定客户身份证扫描件的保存期限。"
+  },
+  {
+    "id": "N22",
+    "category": "missing",
+    "question": "采购申请交给法务后应在几小时内审批？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "资料没有规定法务审批时限，无法确认小时数。"
+  },
+  {
+    "id": "N23",
+    "category": "missing",
+    "question": "员工每天可以报销多少元打车补贴？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "资料没有规定每日打车补贴，无法确认金额。"
+  },
+  {
+    "id": "N24",
+    "category": "missing",
+    "question": "实习生的国内出差每日餐补标准是多少？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "已给出的餐补规则适用于正式员工，没有给出实习生标准，无法确认金额。"
+  },
+  {
+    "id": "A25",
+    "category": "ambiguous",
+    "question": "一笔发生在 2025 年或 2026 年的上海住宿，上限是多少？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "2025 与 2026 年规则不同，且 2026 年上海 4 月前后也不同；需要具体住宿日期。"
+  },
+  {
+    "id": "A26",
+    "category": "ambiguous",
+    "question": "一笔可能发生在 2025 年也可能发生在 2026 年的差旅，每日餐补是多少？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "2025 版与 2026 版餐补不同；需要确认行程日期。"
+  },
+  {
+    "id": "A27",
+    "category": "ambiguous",
+    "question": "一笔不确定发生在 2025 年还是 2026 年的行程，返程后几天内报销？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "2025 与 2026 年报销期限不同；需要确认行程日期。"
+  },
+  {
+    "id": "A28",
+    "category": "ambiguous",
+    "question": "2026 年的一次住宿，没有说明城市，是按多少元的上限报销？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "2026 年住宿上限取决于城市；需要确认目的地。"
+  },
+  {
+    "id": "A29",
+    "category": "ambiguous",
+    "question": "2026 年的一次国内出差，没有说明目的地，是否适用上海住宿补充规则？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "上海补充规则只适用于上海行程；需要确认目的地。"
+  },
+  {
+    "id": "A30",
+    "category": "ambiguous",
+    "question": "2026 年 3 月或 5 月的上海住宿，每人每晚最高多少元？",
+    "expected_behavior": "abstain",
+    "expected_sources": [],
+    "evidence": [],
+    "reference_answer": "2026 年 3 月与 5 月上海住宿标准不同；需要确认住宿日期。"
+  }
+]
